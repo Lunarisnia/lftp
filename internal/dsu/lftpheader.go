@@ -17,11 +17,12 @@ func (l *LFTPHeader) ConstructString() string {
 		"%s|%s|%s|%s|%s|%s|%s|",
 		headerString,
 		l.Version,
-		string(l.ContentLength),
-		string(l.TotalLength),
-		string(l.StartOffset),
-		string(l.EndOffset),
-		string(l.ContentID),
+		fmt.Sprint(l.ContentLength),
+		fmt.Sprint(l.TotalLength),
+		fmt.Sprint(l.StartOffset),
+		fmt.Sprint(l.EndOffset),
+		fmt.Sprint(l.ContentID),
 	)
+	fmt.Println(*l)
 	return headerString
 }

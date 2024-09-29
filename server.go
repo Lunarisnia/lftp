@@ -22,7 +22,7 @@ func (s *Server) Listen(address string) error {
 			return err
 		}
 
-		go s.handleConnection(connection)
+		s.handleConnection(connection)
 	}
 }
 
