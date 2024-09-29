@@ -2,6 +2,8 @@ module github.com/Lunarisnia/lftp
 
 go 1.22.2
 
+require github.com/google/uuid v1.6.0
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
