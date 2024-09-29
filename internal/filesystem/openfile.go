@@ -1,14 +1,19 @@
 package filesystem
 
-import "os"
+import (
+	"bufio"
+	"io"
+	"os"
+)
 
-func OpenFile(path string) error {
-	// TODO: Open file and save the reference in a map
-	// TODO: Return custom file struct that can consume a bytes at a time and keep track of the cursor
-	_, err := os.Open(path)
+// TODO: Need to somehow save this opened file reader in a map
+// TODO: need custom file struct that can consume a bytes at a time and keep track of the cursor
+func OpenFile(path string, bufferSize int) (io.Reader, error) {
+	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	buf := bufio.NewReaderSize(f, bufferSize)
 
-	return nil
+	return buf, nil
 }

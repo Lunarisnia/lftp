@@ -29,7 +29,7 @@ func (c *Client) SendFile(address string, filePath string) error {
 
 	// TODO: A way to memoize transferred file if its bigger than x amount
 	// FIXME: There should be a way to send using existing uuid later
-	filesystem.OpenFile(filePath)
+	filesystem.OpenFile(filePath, 3)
 
 	generatedId := uuid.NewString()
 	header := dsu.LFTPHeader{
