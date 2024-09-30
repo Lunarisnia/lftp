@@ -2,7 +2,6 @@ package lftp
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"testing"
 
@@ -31,20 +30,23 @@ func Test_SendingFile(t *testing.T) {
 		var server LFTPServer
 		waiting := make(chan bool)
 		go func() {
-			writeCounter := 0
 			buf, err := os.Create("./tests/ordinary-copy")
 			assert.Nil(t, err)
 
 			server = NewLFTPServer(func(header *dsu.LFTPHeader) {
-				nonZero := bytes.Trim(header.Content, "\x00") // NOTE: This might cause error in files that intentionally pad with zero values
-				n, err := buf.Write(nonZero)
+				nonZero := header.Content
+				if header.ContentLength == -1 {
+					nonZero = bytes.Trim(
+						header.Content,
+						"\x00",
+					) // NOTE: This might cause error in files that intentionally pad with zero values
+				}
+				_, err := buf.Write(nonZero)
 				assert.Nil(t, err)
-				writeCounter += n
-				fmt.Println(header.ContentLength, "-======")
-				// if writeCounter >= 1406 {
-				// 	waiting <- true
-				// 	buf.Close()
-				// }
+				if header.ContentLength == -1 {
+					waiting <- true
+					buf.Close()
+				}
 			})
 			server.Listen(":6968")
 		}()

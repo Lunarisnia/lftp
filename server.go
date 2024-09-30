@@ -52,7 +52,6 @@ func (s *Server) Listen(address string) error {
 			}
 
 			s.requestHandler(header)
-
 		}(connection)
 	}
 }
