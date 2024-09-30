@@ -1,6 +1,7 @@
 package lftp
 
 import (
+	"bytes"
 	"os"
 	"testing"
 
@@ -34,10 +35,11 @@ func Test_SendingFile(t *testing.T) {
 			assert.Nil(t, err)
 
 			server = NewLFTPServer(func(header *dsu.LFTPHeader) {
-				n, err := buf.WriteString(string(header.Content))
+				nonZero := bytes.Trim(header.Content, "\x00") // NOTE: This might cause error in files that intentionally pad with zero values
+				n, err := buf.Write(nonZero)
 				assert.Nil(t, err)
 				writeCounter += n
-				if writeCounter == 32 {
+				if writeCounter >= 32 {
 					waiting <- true
 					buf.Close()
 				}
@@ -45,7 +47,7 @@ func Test_SendingFile(t *testing.T) {
 			server.Listen(":6968")
 		}()
 		client := NewLFTPClient()
-		err := client.SendFile("localhost:6968", "./tests/32bytes", 16)
+		err := client.SendFile("localhost:6968", "./tests/32bytes", 25)
 		assert.Nil(t, err)
 		<-waiting
 		err = server.Close()

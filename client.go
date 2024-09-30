@@ -69,22 +69,21 @@ func (c *Client) SendFile(address string, filePath string, chunkSize int) error 
 		n, err := f.Read(header.Content)
 		fmt.Printf("%v amount of data has been read.\n", n)
 		if err != nil {
+			fmt.Println(err, "======")
 			return err
 		}
 
 		response := header.ConstructString()
 		fmt.Fprint(connection, response)
-		// TODO: need to call continueSendFile if its not done yet
-		// Peek the next chunkSize bytes
 
-		_, err = f.Peek(chunkSize)
+		preview, err := f.Peek(chunkSize)
 		if err != nil {
-			if errors.Is(err, io.EOF) {
+			if errors.Is(err, io.EOF) && len(preview) == 0 {
 				return nil
 			}
-			return err
+			if !errors.Is(err, io.EOF) {
+				return err
+			}
 		}
 	}
-
-	return nil
 }
