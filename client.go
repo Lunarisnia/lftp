@@ -69,7 +69,6 @@ func (c *Client) SendFile(address string, filePath string, chunkSize int) error 
 		n, err := f.Read(header.Content)
 		fmt.Printf("%v amount of data has been read.\n", n)
 		if err != nil {
-			fmt.Println(err, "======")
 			return err
 		}
 
