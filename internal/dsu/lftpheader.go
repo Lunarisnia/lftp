@@ -4,8 +4,8 @@ import "fmt"
 
 type LFTPHeader struct {
 	Version       string
-	ContentLength uint
-	TotalLength   uint
+	ContentLength int
+	TotalLength   int
 	StartOffset   int
 	EndOffset     int
 	ContentID     string

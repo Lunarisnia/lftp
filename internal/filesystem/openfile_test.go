@@ -32,4 +32,9 @@ func Test_OpenFile(t *testing.T) {
 		r.Read(p)
 		assert.Equal(t, "7\n6", string(p))
 	})
+	t.Run("Expect to return 16 as the size because it is smaller than 16", func(t *testing.T) {
+		r, err := OpenFile("../../tests/7bytes", 3)
+		assert.Nil(t, err)
+		assert.Equal(t, 16, r.Size())
+	})
 }
