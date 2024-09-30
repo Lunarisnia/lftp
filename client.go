@@ -1,6 +1,8 @@
 package lftp
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"net"
 
@@ -18,12 +20,12 @@ type LFTPClient interface {
 }
 
 type Client struct {
-	memo dsu.ClientMemo
+	memo *dsu.ClientMemo
 }
 
 func NewLFTPClient() LFTPClient {
 	return &Client{
-		memo: make(dsu.ClientMemo),
+		memo: dsu.NewClientMemo(),
 	}
 }
 
@@ -43,24 +45,23 @@ func (c *Client) SendFile(address string, filePath string, chunkSize int) error 
 		return err
 	}
 
-	// TODO: A way to memoize transferred file if its bigger than x amount
-	// FIXME: There should be a way to send using existing uuid later
 	f, err := filesystem.OpenFile(filePath, chunkSize)
 	if err != nil {
 		return err
 	}
 
 	generatedId := uuid.NewString()
-	if _, exist := c.memo[generatedId]; exist {
+	if _, exist := c.memo.BufferMap[generatedId]; exist {
 		fmt.Printf("The impossible just happened. an UUID just clashed: %v\n", generatedId)
 	}
 	if chunkSize < f.Size() {
-		c.memo[generatedId] = f
+		c.memo.BufferMap[generatedId] = f
 	}
+	c.memo.TotalLength = f.Size()
 	header := dsu.LFTPHeader{
 		Version:       ClientVersion,
-		ContentLength: chunkSize,
-		TotalLength:   f.Size(),
+		ContentLength: f.Size(),
+		TotalLength:   c.memo.TotalLength,
 		StartOffset:   0,
 		EndOffset:     chunkSize,
 		ContentID:     generatedId,
@@ -75,10 +76,32 @@ func (c *Client) SendFile(address string, filePath string, chunkSize int) error 
 	response := header.ConstructString()
 	fmt.Fprint(connection, response)
 	// TODO: need to call continueSendFile if its not done yet
+	// Peek the next chunkSize bytes
+
+	// preview, err := f.Peek(chunkSize)
+	// fmt.Println("1=======================================================")
+	// if err != nil {
+	// 	if !errors.Is(err, bufio.ErrBufferFull) {
+	// 		return err
+	// 	}
+	// 	if !errors.Is(err, io.EOF) {
+	// 		return err
+	// 	}
+	// 	delete(c.memo.BufferMap, header.ContentID)
+	// 	return err
+	// }
+	// if err != nil && errors.Is(err, bufio.ErrBufferFull) && len(preview) == 0 {
+	// 	fmt.Println("3=======================================================")
+	// 	fmt.Println("THIS RAN")
+	// 	delete(c.memo.BufferMap, header.ContentID)
+	// 	return nil
+	// }
+	// c.continueSendFile(1, address, header.ContentID, chunkSize)
 
 	return nil
 }
 
+// FIXME: Maybe just do it iteratively?
 func (c *Client) continueSendFile(i int, address string, contentId string, chunkSize int) error {
 	connection, err := c.connect(address)
 	defer connection.Close()
@@ -86,7 +109,7 @@ func (c *Client) continueSendFile(i int, address string, contentId string, chunk
 		return err
 	}
 
-	f, exist := c.memo[contentId]
+	f, exist := c.memo.BufferMap[contentId]
 	if !exist {
 		fmt.Println("File did not exist in the memo")
 		return nil
@@ -94,12 +117,22 @@ func (c *Client) continueSendFile(i int, address string, contentId string, chunk
 
 	header := dsu.LFTPHeader{
 		Version:       ClientVersion,
-		ContentLength: chunkSize,
-		TotalLength:   f.Size(),
-		StartOffset:   chunkSize,
-		EndOffset:     i * chunkSize,
+		ContentLength: f.Size(),
+		TotalLength:   c.memo.TotalLength,
+		StartOffset:   i * chunkSize,
+		EndOffset:     (i + 1) * chunkSize,
 		ContentID:     contentId,
 	}
 	fmt.Fprint(connection, header.ConstructString())
+	preview, err := f.Peek(chunkSize)
+	if err != nil && !errors.Is(err, bufio.ErrBufferFull) {
+		return err
+	}
+	if err != nil && errors.Is(err, bufio.ErrBufferFull) && len(preview) == 0 {
+		fmt.Println("THIS RAN")
+		delete(c.memo.BufferMap, header.ContentID)
+		return nil
+	}
+	c.continueSendFile(i+1, address, contentId, chunkSize)
 	return nil
 }
