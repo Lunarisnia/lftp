@@ -1,6 +1,7 @@
 package lftparser
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
@@ -10,6 +11,9 @@ import (
 func ParseHeader(rawContent []byte) (*dsu.LFTPHeader, error) {
 	content := string(rawContent)
 	headers := strings.Split(content, "||||")
+	if len(headers) < 8 {
+		return nil, errors.New("failed to parse headers")
+	}
 	contentLength, err := strconv.Atoi(headers[2])
 	if err != nil {
 		return nil, err

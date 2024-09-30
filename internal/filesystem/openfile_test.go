@@ -45,4 +45,12 @@ func Test_OpenFile(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 16, r.Size())
 	})
+	t.Run("Expect to return EOF", func(t *testing.T) {
+		r, err := OpenFile("../../tests/32bytes", 16)
+
+		buf := make([]byte, 16)
+		r.Read(buf)
+		_, err = r.Peek(128)
+		assert.Error(t, err, "EOF")
+	})
 }
