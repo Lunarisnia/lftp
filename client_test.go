@@ -2,6 +2,7 @@ package lftp
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
@@ -31,7 +32,7 @@ func Test_SendingFile(t *testing.T) {
 		waiting := make(chan bool)
 		go func() {
 			writeCounter := 0
-			buf, err := os.Create("./tests/32bytes-copy")
+			buf, err := os.Create("./tests/ordinary-copy")
 			assert.Nil(t, err)
 
 			server = NewLFTPServer(func(header *dsu.LFTPHeader) {
@@ -39,15 +40,16 @@ func Test_SendingFile(t *testing.T) {
 				n, err := buf.Write(nonZero)
 				assert.Nil(t, err)
 				writeCounter += n
-				if writeCounter >= 32 {
-					waiting <- true
-					buf.Close()
-				}
+				fmt.Println(header.ContentLength, "-======")
+				// if writeCounter >= 1406 {
+				// 	waiting <- true
+				// 	buf.Close()
+				// }
 			})
 			server.Listen(":6968")
 		}()
 		client := NewLFTPClient()
-		err := client.SendFile("localhost:6968", "./tests/32bytes", 25)
+		err := client.SendFile("localhost:6968", "./tests/ordinary", 1000)
 		assert.Nil(t, err)
 		<-waiting
 		err = server.Close()
