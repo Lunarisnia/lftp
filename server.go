@@ -4,13 +4,31 @@ import (
 	"io"
 	"net"
 
+	"github.com/Lunarisnia/lftp/internal/dsu"
 	"github.com/Lunarisnia/lftp/internal/lftparser"
 )
 
-type Server struct{}
+type LFTPServer interface {
+	Listen(address string) error
+	Close() error
+}
+
+type RequestHandler func(header *dsu.LFTPHeader)
+
+type Server struct {
+	listener       net.Listener
+	requestHandler RequestHandler
+}
+
+func NewLFTPServer(requestHandler RequestHandler) LFTPServer {
+	return &Server{
+		requestHandler: requestHandler,
+	}
+}
 
 func (s *Server) Listen(address string) error {
 	listener, err := net.Listen("tcp", address)
+	s.listener = listener
 	if err != nil {
 		return err
 	}
@@ -22,15 +40,27 @@ func (s *Server) Listen(address string) error {
 			return err
 		}
 
-		s.handleConnection(connection)
+		func(c net.Conn) {
+			defer c.Close()
+			rawContent, err := io.ReadAll(c)
+			if err != nil {
+				panic(err)
+			}
+			header, err := lftparser.ParseHeader(rawContent)
+			if err != nil {
+				panic(err)
+			}
+
+			s.requestHandler(header)
+
+		}(connection)
 	}
 }
 
-func (s *Server) handleConnection(c net.Conn) {
-	defer c.Close()
-	rawContent, err := io.ReadAll(c)
+func (s *Server) Close() error {
+	err := s.listener.Close()
 	if err != nil {
-		panic(err)
+		return err
 	}
-	lftparser.ParseHeader(rawContent)
+	return nil
 }

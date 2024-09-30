@@ -17,6 +17,6 @@ func Test_ConstructingLFTPHeader(t *testing.T) {
 			TotalLength:   10,
 		}
 		headerString := header.ConstructString()
-		assert.Equal(t, headerString, "LFTP|1.0|3|10|1|2|CONTENTIDHERE|")
+		assert.Equal(t, "LFTP||||1.0||||3||||10||||1||||2||||CONTENTIDHERE||||", headerString)
 	})
 }

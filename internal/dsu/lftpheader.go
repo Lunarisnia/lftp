@@ -9,12 +9,13 @@ type LFTPHeader struct {
 	StartOffset   int
 	EndOffset     int
 	ContentID     string
+	Content       []byte
 }
 
 func (l *LFTPHeader) ConstructString() string {
 	headerString := "LFTP"
 	headerString = fmt.Sprintf(
-		"%s|%s|%s|%s|%s|%s|%s|",
+		"%s||||%s||||%s||||%s||||%s||||%s||||%s||||%s",
 		headerString,
 		l.Version,
 		fmt.Sprint(l.ContentLength),
@@ -22,7 +23,7 @@ func (l *LFTPHeader) ConstructString() string {
 		fmt.Sprint(l.StartOffset),
 		fmt.Sprint(l.EndOffset),
 		fmt.Sprint(l.ContentID),
+		string(l.Content),
 	)
-	fmt.Println(*l)
 	return headerString
 }

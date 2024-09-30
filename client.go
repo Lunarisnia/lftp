@@ -21,7 +21,7 @@ type Client struct {
 	memo dsu.ClientMemo
 }
 
-func NewClient() LFTPClient {
+func NewLFTPClient() LFTPClient {
 	return &Client{
 		memo: make(dsu.ClientMemo),
 	}
@@ -58,14 +58,22 @@ func (c *Client) SendFile(address string, filePath string, chunkSize int) error 
 		c.memo[generatedId] = f
 	}
 	header := dsu.LFTPHeader{
-		Version:       "1.0",
+		Version:       ClientVersion,
 		ContentLength: chunkSize,
 		TotalLength:   f.Size(),
 		StartOffset:   0,
 		EndOffset:     chunkSize,
 		ContentID:     generatedId,
+		Content:       make([]byte, chunkSize),
 	}
-	fmt.Fprint(connection, header.ConstructString())
+	n, err := f.Read(header.Content)
+	fmt.Printf("%v amount of data has been read.\n", n)
+	if err != nil {
+		return err
+	}
+
+	response := header.ConstructString()
+	fmt.Fprint(connection, response)
 	// TODO: need to call continueSendFile if its not done yet
 
 	return nil
